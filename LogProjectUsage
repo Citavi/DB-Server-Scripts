@@ -1,0 +1,60 @@
+-- This script creates a database table named Citavi6.LogProjectUsage and three triggers.
+-- The triggers track the login and logout of a project by a user.
+
+-- To evaluate the project usage in your organization, start
+-- SQL Server Management Studio, connect to the respective database and run
+-- select * from Citavi6.LogProjectUsage
+
+
+if not exists (select 1 
+			   from INFORMATION_SCHEMA.TABLES 
+			   where 
+					table_type = 'BASE TABLE' and
+					table_schema = 'Citavi6' and
+					table_name = 'LogProjectUsage')
+	create table Citavi6.LogProjectUsage
+	(
+		UserId nvarchar(200) not null,
+		ProjectName nvarchar(200) not null,
+		Concurrent bit not null,
+		[Event] nvarchar(200) not null,
+		[TimeStamp] datetime2 not null constraint DF_Logging_TimeStamp default CURRENT_TIMESTAMP
+	);
+go
+
+drop trigger if exists Citavi6.LogProjectUsageTrigger;
+go
+
+create trigger Citavi6.LogProjectUsageTrigger on Citavi6.ProjectUser
+after insert
+as
+	insert into Citavi6.LogProjectUsage (UserId, ProjectName, Concurrent, [Event])
+	select i.UserId, i.ProjectName, i.Concurrent, 'Login'
+	from inserted i
+	where i.UserId is not null and i.Concurrent = 1;
+go
+
+drop trigger if exists Citavi6.LoginKeepAliveTrigger;
+go
+
+create trigger Citavi6.LoginKeepAliveTrigger on Citavi6.ProjectUser
+after update
+as
+	delete pu
+	from Citavi6.ProjectUser pu
+	where 
+		pu.Concurrent = 1 and 
+		datediff (minute, pu.LastAccess, sysdatetime()) > 2;
+go
+
+drop trigger if exists Citavi6.LogoutTrigger;
+go
+
+create trigger Citavi6.LogoutTrigger on Citavi6.ProjectUser
+after delete
+as
+	insert into Citavi6.LogProjectUsage (UserId, ProjectName, Concurrent, [Event])
+	select d.UserId, d.ProjectName, d.Concurrent, 'Logout'
+	from Deleted d
+	where d.UserId is not null and d.Concurrent = 1;
+go
