@@ -27,7 +27,7 @@ create trigger Citavi6.LogMaxConcurrentLicensesPerDayTrigger on Citavi6.ProjectU
 after insert
 as
 	declare @Today datetime2 = DateAdd(dd, DateDiff(dd, 0, SYSDATETIME()), 0);
-	declare @LicenseCount int = (select count(IntId) from Citavi6.ProjectUser where Concurrent = 1);
+	declare @LicenseCount int = (select count(IntId) from Citavi6.ProjectUser where Concurrent = 1 and lastaccess > dateadd(minute, -2, getdate()));
 	declare @CurrentMax int = (select MaxNumberOfLicenses from Citavi6.LogMaxConcurrentLicensesPerDay where [Day] = @Today);
 
 	if (@CurrentMax is null)
