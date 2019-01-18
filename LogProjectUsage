@@ -4,14 +4,13 @@
 -- To evaluate the project usage in your organization, start
 -- SQL Server Management Studio, connect to the respective database and run
 -- select * from Citavi6.LogProjectUsage
-
-
 if not exists (select 1 
 			   from INFORMATION_SCHEMA.TABLES 
 			   where 
 					table_type = 'BASE TABLE' and
 					table_schema = 'Citavi6' and
 					table_name = 'LogProjectUsage')
+begin
 	create table Citavi6.LogProjectUsage
 	(
 		UserId nvarchar(200) not null,
@@ -20,9 +19,13 @@ if not exists (select 1
 		[Event] nvarchar(200) not null,
 		[TimeStamp] datetime2 not null constraint DF_Logging_TimeStamp default CURRENT_TIMESTAMP
 	);
+end
 go
 
-drop trigger if exists Citavi6.LogProjectUsageTrigger;
+if exists (select * from sys.triggers where [Name] = 'LogProjectUsageTrigger')
+begin
+	drop trigger Citavi6.LogProjectUsageTrigger;
+end
 go
 
 create trigger Citavi6.LogProjectUsageTrigger on Citavi6.ProjectUser
@@ -34,7 +37,10 @@ as
 	where i.UserId is not null and i.Concurrent = 1;
 go
 
-drop trigger if exists Citavi6.LoginKeepAliveTrigger;
+if exists (select * from sys.triggers where [Name] = 'LoginKeepAliveTrigger')
+begin
+	drop trigger Citavi6.LoginKeepAliveTrigger;
+end
 go
 
 create trigger Citavi6.LoginKeepAliveTrigger on Citavi6.ProjectUser
@@ -47,7 +53,10 @@ as
 		datediff (minute, pu.LastAccess, sysdatetime()) > 2;
 go
 
-drop trigger if exists Citavi6.LogoutTrigger;
+if exists (select * from sys.triggers where [Name] = 'LogoutTrigger')
+begin
+	drop trigger Citavi6.LogoutTrigger;
+end
 go
 
 create trigger Citavi6.LogoutTrigger on Citavi6.ProjectUser
