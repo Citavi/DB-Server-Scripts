@@ -12,15 +12,20 @@ if not exists (select 1
 					table_type = 'BASE TABLE' and
 					table_schema = 'Citavi6' and
 					table_name = 'LogMaxConcurrentLicensesPerDay')
-create table Citavi6.LogMaxConcurrentLicensesPerDay 
-(
-	[IntID] [int] identity(1,1) not null constraint [PK_LogMaxLicenses] primary key clustered,
-	[Day] DateTime2,
-	[MaxNumberOfLicenses] int not null
-);
+begin
+	create table Citavi6.LogMaxConcurrentLicensesPerDay 
+	(
+		[IntID] [int] identity(1,1) not null constraint [PK_LogMaxLicenses] primary key clustered,
+		[Day] DateTime2,
+		[MaxNumberOfLicenses] int not null
+	);
+end
 go
 
-drop trigger if exists Citavi6.LogMaxConcurrentLicensesPerDayTrigger;
+if exists (select * from sys.triggers where [Name] = 'LogMaxConcurrentLicensesPerDayTrigger')
+begin
+	drop trigger Citavi6.LogMaxConcurrentLicensesPerDayTrigger;
+end
 go
 
 create trigger Citavi6.LogMaxConcurrentLicensesPerDayTrigger on Citavi6.ProjectUser
