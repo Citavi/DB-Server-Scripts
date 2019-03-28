@@ -1,0 +1,44 @@
+-- This script creates a database table named Citavi6.LogMaxConcurrentLicensesPerDay and
+-- a trigger named Citavi.LogMaxConcurrentLicensesPerDayTrigger.
+-- The trigger tracks the maximum use of concurrent licenses per day.
+
+-- To evaluate the use of concurrent licenses in your organization, start
+-- SQL Server Management Studio, connect to the respective database and run
+-- select * from Citavi6.LogMaxConcurrentLicensesPerDay
+
+if not exists (select 1 
+			   from INFORMATION_SCHEMA.TABLES 
+			   where 
+					table_type = 'BASE TABLE' and
+					table_schema = 'Citavi' and
+					table_name = 'LogMaxConcurrentLicensesPerDay')
+begin
+	create table Citavi.LogMaxConcurrentLicensesPerDay 
+	(
+		[IntID] [int] identity(1,1) not null constraint [PK_LogMaxLicenses] primary key clustered,
+		[Day] DateTime2,
+		[MaxNumberOfLicenses] int not null
+	);
+end
+go
+
+if exists (select * from sys.triggers where [Name] = 'LogMaxConcurrentLicensesPerDayTrigger')
+begin
+	drop trigger Citavi.LogMaxConcurrentLicensesPerDayTrigger;
+end
+go
+
+create trigger Citavi.LogMaxConcurrentLicensesPerDayTrigger on Citavi.ProjectUser
+after insert
+as
+	declare @Today datetime2 = DateAdd(dd, DateDiff(dd, 0, SYSDATETIME()), 0);
+	declare @LicenseCount int = (select count(IntId) from Citavi.ProjectUser where Concurrent = 1 and lastaccess > dateadd(minute, -2, getdate()));
+	declare @CurrentMax int = (select MaxNumberOfLicenses from Citavi.LogMaxConcurrentLicensesPerDay where [Day] = @Today);
+
+	if (@CurrentMax is null)
+		insert into Citavi.LogMaxConcurrentLicensesPerDay ([Day], [MaxNumberOfLicenses])
+		values (@Today, @LicenseCount);
+	else if (@LicenseCount > @CurrentMax)
+		update Citavi.LogMaxConcurrentLicensesPerDay
+		set MaxNumberOfLicenses = @LicenseCount
+		where [Day] = @Today;
