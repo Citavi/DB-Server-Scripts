@@ -1,8 +1,8 @@
--- This script replaces (partial) strings in the attachment paths of all DBServer projects in your Citavi database.
--- For example, you can use this script if you want to relocate all Citavi attachments to another file server.
+-- This is a "Find and replace" script that can be used for attachment paths of all DBServer projects in a Citavi database.
+-- You can use this script if you want to relocate all Citavi attachments to another file server, for example.
 
--- Specify the string you want to replace in the parameter @SearchFor (placeholder <SearchFor>).
--- Specify the new string in the parameter @ReplaceWith (placeholder <ReplaceWith>).
+-- In the @SearchFor parameter (placeholder <SearchFor>), enter the part of the path you want to replace.
+-- In the @ReplaceWith parameter (placeholder <ReplaceWith>), enter the replacement text.
 
 set noexec off
 set nocount on
